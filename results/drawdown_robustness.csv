@@ -1,0 +1,6 @@
+sample,count,mean_per_drawdown,mean_per_day,median_per_drawdown,median_per_day,ratio_of_means
+All drawdowns,651,53.5,3091.8,6.0,1193.0,57.8
+From the 1954 recovery onwards,614,41.0,961.5,6.0,543.0,23.4
+Deeper than 5%,73,392.6,3752.2,84.0,2623.0,9.6
+Deeper than 10%,26,961.5,4283.4,433.0,2623.0,4.5
+Deeper than 20%,12,1824.0,4847.1,764.0,2744.0,2.7

@@ -1,0 +1,24 @@
+dataset,statistic,value
+Buses,Mean gap (minutes),10
+Buses,Mean gap you land in (minutes),12.5
+Buses,"Mean gap you land in, from the formula (minutes)",12.5
+Facebook,People,4039
+Facebook,Friendships,88234
+Facebook,Mean number of friends of a person,43.7
+Facebook,Mean number of friends of a friend,106.6
+Facebook,"Mean number of friends of a friend, from the formula",106.6
+Facebook,Ratio of the two means,2.44
+Facebook,Median number of friends of a person,25
+Facebook,Median number of friends of a friend,83
+Facebook,Most friends of one person,1045
+Facebook,Share of people with fewer friends than their friends have on average,0.8747
+S&P 500,Trading days,24809
+S&P 500,Share of trading days below the record,0.941
+S&P 500,Completed drawdowns,651
+S&P 500,"Median length, per drawdown (days)",6
+S&P 500,"Median length, per day (days)",1193
+S&P 500,"Mean length, per drawdown (days)",53.5
+S&P 500,"Mean length, per day (days)",3091.8
+S&P 500,"Mean length, per day, from the formula (days)",3091.8
+S&P 500,Ratio of the two means,57.8
+S&P 500,Share of days in the four longest drawdowns,0.4736

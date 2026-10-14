@@ -1,0 +1,5 @@
+network,link,people,links,mean_friends_of_a_person,mean_friends_of_a_friend,median_friends_of_a_person,median_friends_of_a_friend,most_friends,share_with_fewer_friends_than_their_friends
+Facebook,friends,4039,88234,43.7,106.6,25,83,1045,0.8747
+Deezer,mutual followers,28281,92752,6.6,16.2,4,11,172,0.8616
+Last.fm,mutual followers,7624,27806,7.3,25.4,4,14,216,0.9041
+GitHub,mutual followers,37700,289003,15.3,441.0,6,42,9458,0.9895

@@ -1,0 +1,5 @@
+duration,drawdowns,days,share_of_drawdowns,share_of_days
+Under 1 month,536,3900,0.8233,0.1119
+1 to 12 months,100,7428,0.1536,0.2132
+1 to 5 years,11,7012,0.0169,0.2013
+Over 5 years,4,16501,0.0061,0.4736
