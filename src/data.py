@@ -1,4 +1,4 @@
-"""Download and load four public friendship networks and the daily S&P 500."""
+"""Download and load four public friendship networks and the daily S&P 500, with and without dividends."""
 from __future__ import annotations
 
 import gzip
@@ -29,10 +29,11 @@ NETWORKS = {
                "git_web_ml/musae_git_edges.csv", "mutual followers"),
 }
 
-SP500 = RAW / "sp500_yahoo_daily.csv"
+SP500 = RAW / "sp500_yahoo_daily.csv"                         # price index, from 1927
+SP500_TOTAL_RETURN = RAW / "sp500_total_return_yahoo_daily.csv"  # dividends reinvested, from 1988
 LAST_DAY = "2026-10-07"   # fixed, so that a fresh download gives the same sample
-SP500_URL = (
-    "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC"
+YAHOO_URL = (
+    "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
     "?period1=-1500000000&period2={end}&interval=1d"
 )
 
@@ -68,25 +69,31 @@ def load_links(name: str) -> np.ndarray:
     return np.array(sorted(links))
 
 
-def fetch_sp500() -> Path:
-    """Return the path of the S&P 500 file, downloading it first if it is not there."""
-    if not SP500.exists():
+def fetch_index(path: Path, ticker: str) -> Path:
+    """Return the path of a daily index file, downloading it from Yahoo first if it is not there."""
+    if not path.exists():
         RAW.mkdir(parents=True, exist_ok=True)
         end = int((pd.Timestamp(LAST_DAY) + pd.Timedelta(days=1)).timestamp())
-        chart = json.loads(download(SP500_URL.format(end=end)))["chart"]["result"][0]
+        chart = json.loads(download(YAHOO_URL.format(ticker=ticker, end=end)))["chart"]["result"][0]
         closes = pd.Series(
             chart["indicators"]["quote"][0]["close"],
             index=pd.to_datetime(chart["timestamp"], unit="s").normalize(),
             name="close",
         ).dropna().round(2)
         closes.index.name = "date"
-        closes.to_csv(SP500)
-    return SP500
+        closes.to_csv(path)
+    return path
 
 
 def load_sp500() -> pd.Series:
     """Daily closing values of the S&P 500 price index, indexed by date."""
-    return pd.read_csv(fetch_sp500(), index_col="date", parse_dates=["date"])["close"]
+    return pd.read_csv(fetch_index(SP500, "%5EGSPC"), index_col="date", parse_dates=["date"])["close"]
+
+
+def load_sp500_total_return() -> pd.Series:
+    """Daily closing values of the S&P 500 with dividends reinvested, indexed by date."""
+    path = fetch_index(SP500_TOTAL_RETURN, "%5ESP500TR")
+    return pd.read_csv(path, index_col="date", parse_dates=["date"])["close"]
 
 
 if __name__ == "__main__":
@@ -95,3 +102,6 @@ if __name__ == "__main__":
         print(f"{name}: {len(np.unique(links))} people, {len(links)} links ({fetch(name).relative_to(ROOT)})")
     closes = load_sp500()
     print(f"S&P 500: {closes.index[0].date()} to {closes.index[-1].date()}, {len(closes)} days ({SP500.relative_to(ROOT)})")
+    total = load_sp500_total_return()
+    print(f"S&P 500 total return: {total.index[0].date()} to {total.index[-1].date()}, {len(total)} days "
+          f"({SP500_TOTAL_RETURN.relative_to(ROOT)})")

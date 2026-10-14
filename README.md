@@ -1,16 +1,11 @@
 # The inspection paradox
 
-**Why does the bus always seem late, and why do your friends have more friends than you do?**
+**Why does the bus always seem late, why do your friends have more friends than you do, and
+why does a stock market drawdown feel endless?**
 
-In a network of 4,039 Facebook users the average person has **44 friends**, and the average
-friend has **107**. Both figures are correct, and **87%** of the people have fewer friends
-than their own friends do on average. This repository uses real public data to show why, and
-it starts at a bus stop. It ends in the stock market, where the same effect decides how long
-an [S&P 500 drawdown](#the-same-effect-in-the-stock-market) lasts.
-
-**The idea in one line:** an average depends on what you count. Count the items (gaps, people,
-drawdowns) and you get one number. Count the ways of arriving at them (minutes, friendships,
-days) and big items show up more often, so you get a larger number.
+An average depends on what you count. Count the items (gaps, people, drawdowns) and you get
+one number. Count the ways of arriving at them (minutes, friendships, days) and big items show
+up more often, so you get a larger number. Both are correct; they answer different questions.
 
 | | Counting the items | Counting the ways of arriving |
 |---|---|---|
@@ -18,105 +13,40 @@ days) and big items show up more often, so you get a larger number.
 | Facebook friends | 44 friends | **107 friends** |
 | S&P 500 drawdowns | 54 days | **8.5 years** |
 
-**Contents:** [The bus stop](#the-bus-stop) ·
-[Your friends](#your-friends) ·
-[The formula](#the-formula) ·
-[Other networks](#is-it-only-this-network) ·
-[The stock market](#the-same-effect-in-the-stock-market) ·
-[Why it matters](#why-this-matters-in-quantitative-research) ·
-[How the code works](#how-the-code-works) ·
-[Run it](#run-it) ·
-[Limitations](#limitations) ·
-[Data](#data)
-
-![Buses in gaps of 5 and 15 minutes, counted by gap and counted by minute](figures/buses.png)
+**Contents:** [Buses](#the-bus-stop) · [Friends](#your-friends) · [The formula](#the-formula) ·
+[Drawdowns](#the-same-effect-in-the-stock-market) · [Code](#how-the-code-works) ·
+[Run it](#run-it) · [Limitations](#limitations) · [Data](#data)
 
 ## The bus stop
 
-Suppose buses come in gaps that alternate between 5 and 15 minutes. The average gap is 10
-minutes. But a passenger does not arrive at a random gap, a passenger arrives at a random
-minute, and 15 of every 20 minutes are inside a long gap.
+Buses come in gaps that alternate between 5 and 15 minutes, so the average gap is 10 minutes.
+But a passenger arrives at a random *minute*, not at a random gap, and 15 of every 20 minutes
+are inside a long gap. Half of the gaps are long, yet three quarters of the time is.
 
-| | Short gaps | Long gaps |
-|---|---|---|
-| Share of the gaps | 50% | 50% |
-| Share of the minutes | 25% | **75%** |
+![Buses in gaps of 5 and 15 minutes, counted by gap and counted by minute](figures/buses.png)
 
-The gap a passenger lands in lasts 12.5 minutes on average, not 10. This is the **inspection
-paradox**: when you sample a moment in time, long intervals are over-represented in proportion
-to their length.
+The gap a passenger lands in lasts 12.5 minutes on average, and the wait for the next bus is
+6.25 minutes, not the 5 that the timetable suggests. This is the **inspection paradox**: when
+you sample a moment in time, long intervals are over-represented in proportion to their length.
 
 ## Your friends
 
 Replace the gaps with people and the minutes with friendships. A person with 500 friends
-appears in 500 lists of friends, so you are far more likely to know that person than somebody
-with 5. Picking "a friend" is not the same as picking "a person".
+appears in 500 lists of friends, so you are far more likely to know them than somebody with 5.
+
+In a public network of 4,039 Facebook users and 88,234 friendships, the average person has
+**44 friends** (median 25), but the person at the end of a random friendship has **107**
+(median 83). One person in eight has 100 friends or more, and they fill 43% of all the places
+in people's lists of friends.
 
 ![Facebook users by number of friends, counted as people and counted as friends](figures/friend_shares.png)
 
-| Number of friends | Counting people | Counting friends |
-|---|---|---|
-| Mean | 44 | **107** |
-| Median | 25 | **83** |
-
-"Counting friends" answers this question: pick a friendship at random and look at the person
-at one end of it, how many friends does that person have?
-
-One person in eight has 100 friends or more, and together they fill 43% of all the places in
-people's lists of friends. The 21% of people with fewer than 10 friends fill 3%.
-
-The figures above compare two averages over the whole network. The same thing shows up
-person by person: for each user, compare their number of friends with the average number of
-friends of their own friends.
+The same holds person by person: for **87%** of the users, their friends have more friends
+than they do on average.
 
 ![Each person's number of friends against that of their friends](figures/friends_of_friends.png)
 
-For 87% of the people, their friends are more popular than they are.
-
-## The formula
-
-If the sizes of the items have mean E[X] and variance Var(X), the mean size of an item reached
-in proportion to its size is
-
-```
-E[X*] = E[X] + Var(X) / E[X]
-```
-
-The second term is never negative, so what you land on is at least as large as the average,
-and the two are equal only when every item has the same size. The more unequal the sizes, the
-larger the difference.
-
-| | E[X] | Var(X) / E[X] | E[X*] |
-|---|---|---|---|
-| Buses | 10 min | 2.5 min | 12.5 min |
-| Facebook friends | 43.7 | 62.9 | 106.6 |
-
-`src/run_analysis.py` computes E[X*] directly and from the formula, and the two agree.
-
-<details>
-<summary><b>Where the formula comes from</b> (three lines)</summary>
-
-If an item of size x is reached with probability proportional to x, the probability of
-reaching it is x / Σx. The mean size of what you reach is therefore
-
-```
-E[X*] = Σ x · (x / Σx) = Σx² / Σx = E[X²] / E[X]
-```
-
-and since E[X²] = Var(X) + E[X]²,
-
-```
-E[X*] = (Var(X) + E[X]²) / E[X] = E[X] + Var(X) / E[X]
-```
-
-For the buses: the gaps are 5 and 15, so E[X] = 10 and Var(X) = 25, which gives 10 + 2.5 = 12.5.
-</details>
-
-## Is it only this network?
-
-The same calculation on three other public networks, of a different size and kind:
-
-![The average person and the average friend in four networks](figures/four_networks.png)
+It is not a quirk of one network. Three other public networks give the same direction:
 
 | Network | People | Average person | Average friend | Fewer than their friends |
 |---|---|---|---|---|
@@ -125,68 +55,127 @@ The same calculation on three other public networks, of a different size and kin
 | Last.fm (mutual followers) | 7,624 | 7.3 | 25.4 | 90% |
 | GitHub (mutual followers) | 37,700 | 15.3 | 441.0 | 99% |
 
-The direction is the same everywhere. The size depends on how unequal the network is: on
-GitHub a few developers have thousands of mutual followers, and the average friend has 29
-times as many as the average person.
+The more unequal the network, the larger the gap: on GitHub a few developers have thousands of
+mutual followers ([figure](figures/four_networks.png)).
 
-The exact figures are in [`results/`](results).
+## The formula
+
+If the sizes have mean E[X] and variance Var(X), the mean size of an item reached in
+proportion to its size is
+
+```
+E[X*] = E[X] + Var(X) / E[X]
+```
+
+The second term is never negative, and it is zero only when every item has the same size. For
+the buses, 10 + 25/10 = 12.5 minutes. For Facebook, 43.7 + 62.9 = 106.6 friends. The code
+computes E[X*] both directly and from the formula, and the two agree.
+
+<details>
+<summary><b>Where it comes from</b></summary>
+
+An item of size x is reached with probability x / Σx, so the mean size of what you reach is
+
+```
+E[X*] = Σ x · x / Σx = E[X²] / E[X] = (Var(X) + E[X]²) / E[X] = E[X] + Var(X) / E[X]
+```
+
+If you arrive at a uniformly random point inside the item, the mean time left is half of that,
+E[X*] / 2: the 6.25 minutes of the bus stop.
+</details>
 
 ## The same effect in the stock market
 
-A drawdown is the time an index spends below its previous record: it runs from a record close
-to the first close that is at least as high. Drawdowns are the gaps between buses, and days
-are the minutes.
+A **drawdown** is the time an index spends below its previous record: it runs from a record
+close to the first close that is at least as high. Drawdowns are the gaps between buses, and
+days are the minutes. Between 1928 and 2026 the S&P 500 completed **651** drawdowns and closed
+below its record on 94% of trading days.
 
-Between 30 December 1927 and 7 October 2026 the S&P 500 completed **651** drawdowns, and it
-closed below its record on 94% of trading days.
+### Counted by drawdown and counted by day
 
 ![S&P 500 drawdowns by duration, counted by drawdown and counted by day](figures/drawdown_shares.png)
 
 | Length of a drawdown | Counting drawdowns | Counting days |
 |---|---|---|
-| Median | 6 days | **1,193 days** (3.3 years) |
-| Mean | 54 days | **3,092 days** (8.5 years) |
+| Median | 6 days | **3.3 years** |
+| Mean | 54 days | **8.5 years** |
 
-"Counting days" answers this question: pick at random a day spent in a drawdown, how long is
-the drawdown it belongs to? Half of the drawdowns were over within 6 days, yet half of the
-days belong to a drawdown that lasted more than 3 years. The formula gives the same answer:
-54 + 3,038 = 3,092 days.
-
-Of the 651 drawdowns, 536 were over within a month, and together they hold 11% of the days.
-Four lasted more than five years, and they hold 47%.
+82% of the drawdowns were over within a month, but they hold only 11% of the days. Four lasted
+more than five years, and they hold 47%.
 
 ![The S&P 500 since 1928 with its four longest drawdowns shaded](figures/sp500_drawdowns.png)
+
+### How long until the next record?
+
+This is the question an investor actually asks, and it is the bus passenger's wait. Pick a
+random day on which the index is below its record and count the days left until a new one:
+
+| Days left until a new record | Value |
+|---|---|
+| Mean | **4.2 years** |
+| Median | **13 months** |
+| Share of days with more than a year left | **52%** |
+
+The typical drawdown is over in 6 days, yet on a typical drawdown day the record is more than
+a year away.
+
+### The longer it has lasted, the longer it still has to go
+
+Waiting does not bring the end closer. Among the drawdowns that have already lasted a given
+time, the median time left *grows* with the time already spent below the record:
+
+![Median time left in a drawdown against the time it has already lasted](figures/drawdown_waiting.png)
+
+| Already below the record for | Drawdowns still open | Back within a month | Median time left |
+|---|---|---|---|
+| Just started | 651 | 82% | 6 days |
+| 1 month | 115 | 48% | 35 days |
+| 1 year | 15 | 7% | 11 months |
+| 3 years | 5 | 0% | 4.2 years |
+
+This is the same inspection effect seen from inside: a drawdown that has survived a year is
+much more likely to be one of the rare long ones. The last rows rest on very few drawdowns.
+
+### Most of a long drawdown is the climb back
+
+In the twelve falls of more than 20%, **75%** of the time was spent after the trough, climbing
+back to the old record. The 1929 crash hit bottom in under three years and took 22 more to
+recover. Depth and length go together: the deep drawdowns are the long ones.
+
+### Does it survive other choices?
 
 The size of the effect depends on the sample, and its direction does not:
 
 | Sample | Drawdowns | Mean, counting drawdowns | Mean, counting days | Ratio |
 |---|---|---|---|---|
-| All | 651 | 54 days | 3,092 days | 58 |
+| All, 1928–2026 | 651 | 54 days | 3,092 days | 58 |
 | From the 1954 recovery onwards | 614 | 41 days | 962 days | 23 |
-| Deeper than 5% | 73 | 393 days | 3,752 days | 9.6 |
-| Deeper than 10% | 26 | 962 days | 4,283 days | 4.5 |
 | Deeper than 20% | 12 | 1,824 days | 4,847 days | 2.7 |
+| Price index, 1988–2026 | 418 | 32 days | 912 days | 28 |
+| **With dividends reinvested**, 1988–2026 | 508 | 26 days | 666 days | 25 |
 
-Leaving out the 25-year drawdown that began in 1929 cuts the ratio by more than half. Keeping
-only the deep drawdowns removes the hundreds of tiny ones, so the lengths are less unequal and
-the ratio falls, but even among falls of more than 20% the drawdown you land in is almost
-three times as long as the average one.
+Reinvesting dividends makes the long drawdowns shorter (the dot-com one goes from 7.2 to 6.1
+years), but the ratio barely moves.
 
-## Why this matters in quantitative research
+### Why this matters in quantitative research
 
-The way you reach your data decides what an average means. Sampling through time favours what
-lasts long, and sampling through connections favours what is well connected. The "average
-drawdown length" in a backtest report counts drawdowns, and what an investor lives through
-counts days. Before trusting an average, it is worth asking what was counted: the items, or
-the ways of arriving at them.
+The "average drawdown length" in a backtest report counts drawdowns; what an investor lives
+through counts days. Sampling through time favours what lasts long, and sampling through
+connections favours what is well connected. Before trusting an average, ask what was counted:
+the items, or the ways of arriving at them.
 
 ## How the code works
 
-The whole analysis rests on three small ideas, each a few lines in `src/`.
+| File | What it does |
+|---|---|
+| `src/paradox.py` | The two averages, and friends of friends |
+| `src/drawdowns.py` | Finds the drawdowns of a price series and the days left in them |
+| `src/data.py` | Downloads and loads the networks and the S&P 500 |
+| `src/run_analysis.py` | Computes every number in this README and writes it to `results/` |
+| `src/plot_*.py` | One figure each, saved to `figures/` |
+| `tests/` | Checks every function on small examples solved by hand |
 
-**1. Two averages of the same sizes** (`src/paradox.py`). The plain average counts every item
-once. The size-weighted average counts every item once per unit of its size, which is
-Σx² / Σx:
+The core is one line. The size-weighted average counts every item once per unit of its size:
 
 ```python
 def weighted_mean(sizes) -> float:
@@ -195,48 +184,9 @@ def weighted_mean(sizes) -> float:
     return float((sizes ** 2).sum() / sizes.sum())
 ```
 
-`weighted_mean([5, 15])` returns 12.5, the bus example.
-
-**2. Friends of friends** (`src/paradox.py`). A network is stored as an array with one row per
-friendship, `[person_a, person_b]`. The number of friends of each person is how many times
-their id appears in that array (`np.bincount`). To get the average number of friends of each
-person's friends, every friendship adds the friend count of one end to the total of the other
-end, and the total is divided by the person's own number of friends.
-
-**3. Drawdowns** (`src/drawdowns.py`). A close is "below the record" when it is lower than the
-highest close so far (`np.maximum.accumulate`). A drawdown is each unbroken run of such days,
-from the last record before it to the first close that is at least as high again. Its length is
-the number of calendar days between those two dates.
-
-`src/run_analysis.py` loads the data, applies these functions and writes every number of this
-README to `results/`. The `plot_*.py` scripts read the same data and draw one figure each.
-The tests in `tests/` check each function on small examples whose answer is known by hand,
-such as the bus gaps, a star network (one person linked to four others, who have one friend
-each) or a triangle where everyone has the same number of friends.
-
-## Repository layout
-
-```
-├── data/
-│   ├── raw/                  the four lists of links and the daily S&P 500
-│   ├── processed/            one row per S&P 500 drawdown
-│   └── README.md             sources and descriptions
-├── src/
-│   ├── data.py               downloads and loads the data
-│   ├── paradox.py            plain and size-weighted averages; friends of friends
-│   ├── drawdowns.py          finds the drawdowns of a price series
-│   ├── run_analysis.py       every number in this README
-│   ├── plot_buses.py         figure 1
-│   ├── plot_shares.py        figure 2
-│   ├── plot_friends.py       figure 3
-│   ├── plot_networks.py      figure 4
-│   ├── plot_drawdown_shares.py   figure 5
-│   ├── plot_drawdown_history.py  figure 6
-│   └── style.py              shared colours and plot settings
-├── tests/                    checks of the calculations on hand-made examples
-├── figures/                  the six figures above
-└── results/                  every number in this README, in five tables
-```
+`weighted_mean([5, 15])` returns 12.5, the bus example. A network is an array with one row per
+friendship; `np.bincount` gives each person's number of friends. A drawdown is an unbroken run
+of closes below the running maximum (`np.maximum.accumulate`).
 
 ## Run it
 
@@ -245,55 +195,46 @@ git clone https://github.com/renatacavilli/inspection-paradox.git
 cd inspection-paradox
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python src/run_analysis.py       # rebuilds results/ and data/processed/
-python src/plot_buses.py
-python src/plot_shares.py
-python src/plot_friends.py
-python src/plot_networks.py      # needs results/networks.csv
-python src/plot_drawdown_shares.py
-python src/plot_drawdown_history.py
+python src/run_analysis.py                     # rebuilds results/ and data/processed/
+for f in src/plot_*.py; do python "$f"; done    # rebuilds figures/
 pytest
 ```
 
-Nothing is random, so the results are identical on every run. Tested with Python 3.14.
+The data are included, so nothing is downloaded and the results are identical on every run.
+Tested with Python 3.14.
 
 ## Limitations
 
 - **The Facebook network is not a random sample.** It joins the friend lists of ten survey
-  participants, and it only contains friendships between people inside those lists. Real
-  numbers of friends are higher.
-- **Old data.** The Facebook data were published in 2012.
-- **Different kinds of link.** On Deezer, Last.fm and GitHub a link is a pair of users who
-  follow each other, which is not the same as a friendship.
-- **Two different comparisons.** 107 is an average over all friendships. The 87% compares each
-  person with the average of their own friends. They measure the same effect in two ways and
-  need not agree in general.
-- **The S&P 500 series is a price index, without dividends.** With dividends reinvested the
-  index recovers sooner, so the long drawdowns are shorter than shown here. Before March 1957
-  the series is the 90-stock composite that preceded the S&P 500.
-- **One drawdown dominates.** The 1929 to 1954 drawdown alone holds 26% of the days. The table
-  above shows the results without it.
-- **Mixed units.** Drawdown lengths are in calendar days. The 94% figure is a share of trading
-  days.
-- **The bus timetable is an illustration.** It is arithmetic, not data.
+  participants (2012), so real numbers of friends are higher. On Deezer, Last.fm and GitHub a
+  link means "follow each other", not friendship.
+- **107 and 87% are two different comparisons** of the same effect: an average over all
+  friendships, and each person against their own friends.
+- **The long series is a price index.** Dividends are only available from 1988 (see the table
+  above). Before March 1957 the series is the 90-stock composite that preceded the S&P 500.
+- **One drawdown dominates.** 1929–1954 alone holds 26% of the days; the table above shows the
+  results without it. Lengths are in calendar days; the 94% is a share of trading days.
+- **Few long drawdowns.** Only 15 lasted more than a year, so the waiting table is a
+  description of the past, not a forecast.
+- **The bus timetable is an illustration**, not data.
 
 ## Data
 
 | Series | Source |
 |---|---|
 | Facebook, Deezer, Last.fm and GitHub networks | [Stanford Network Analysis Project](https://snap.stanford.edu/data/) |
-| S&P 500 price index, daily closes, 1927–2026 | [Yahoo Finance](https://finance.yahoo.com/quote/%5EGSPC/history/), ticker `^GSPC` |
+| S&P 500 price index, daily, 1927–2026 | [Yahoo Finance](https://finance.yahoo.com/quote/%5EGSPC/history/), `^GSPC` |
+| S&P 500 total return index, daily, 1988–2026 | [Yahoo Finance](https://finance.yahoo.com/quote/%5ESP500TR/history/), `^SP500TR` |
 
-See [`data/README.md`](data/README.md) for the source of each file.
+Details of every file are in [`data/README.md`](data/README.md).
 
 ## References
 
 - Feld, S. L. (1991). Why your friends have more friends than you do. *American Journal of Sociology*, 96(6), 1464–1477.
-- Feller, W. (1971). *An Introduction to Probability Theory and Its Applications*, volume 2, second edition. Wiley. Section I.4, the waiting time paradox.
-- Stein, W. E. and Dattero, R. (1985). Sampling bias and the inspection paradox. *Mathematics Magazine*, 58(2), 96–99.
-- Ugander, J., Karrer, B., Backstrom, L. and Marlow, C. (2011). The anatomy of the Facebook social graph. arXiv:1111.4503. The same effect measured on the whole of Facebook.
-- McAuley, J. and Leskovec, J. (2012). Learning to discover social circles in ego networks. *Advances in Neural Information Processing Systems*, 25.
-- Rozemberczki, B. and Sarkar, R. (2020). Characteristic functions on graphs: birds of a feather, from statistical descriptors to parametric models. *CIKM 2020*.
+- Feller, W. (1971). *An Introduction to Probability Theory and Its Applications*, vol. 2, 2nd ed. Wiley. Section I.4, the waiting time paradox.
+- Ugander, J., Karrer, B., Backstrom, L. and Marlow, C. (2011). The anatomy of the Facebook social graph. arXiv:1111.4503.
+- McAuley, J. and Leskovec, J. (2012). Learning to discover social circles in ego networks. *NeurIPS*, 25.
+- Rozemberczki, B. and Sarkar, R. (2020). Characteristic functions on graphs. *CIKM 2020*.
 - Rozemberczki, B., Allen, C. and Sarkar, R. (2021). Multi-scale attributed node embedding. *Journal of Complex Networks*, 9(2).
 
 ## Licence

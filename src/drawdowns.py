@@ -38,3 +38,25 @@ def find_drawdowns(closes: pd.Series) -> pd.DataFrame:
 def share_of_days_below_record(closes: pd.Series) -> float:
     """Fraction of trading days that closed below the highest close so far."""
     return float((closes < closes.cummax()).mean())
+
+
+def days_left(lengths) -> np.ndarray:
+    """Days left until the recovery, for every calendar day spent inside a drawdown.
+
+    A drawdown of L days contributes L values: L days left on the day of the peak, then L - 1,
+    and so on down to 1 on the day before the recovery. Picking one of these values at random
+    is what someone who looks at the index on a random day of a drawdown experiences.
+    """
+    return np.concatenate([np.arange(length, 0, -1) for length in np.asarray(lengths, dtype=int)])
+
+
+def wait_after(lengths, elapsed: int) -> dict[str, float]:
+    """What is left of the drawdowns that have already lasted more than `elapsed` days."""
+    lengths = np.asarray(lengths, dtype=float)
+    left = lengths[lengths > elapsed] - elapsed
+    return {
+        "drawdowns_still_open": len(left),
+        "share_recovering_within_30_days": float((left <= 30).mean()),
+        "median_days_left": float(np.median(left)),
+        "mean_days_left": float(left.mean()),
+    }

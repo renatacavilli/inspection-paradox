@@ -28,6 +28,11 @@ a sample of ten circles of friends and not a random sample of Facebook.
 ticker `^GSPC`. It keeps only the date and the close, rounded to two decimals. Before March 1957
 the series is the 90-stock composite that preceded the S&P 500.
 
+`sp500_total_return_yahoo_daily.csv` has the same index with dividends reinvested, ticker
+[`^SP500TR`](https://finance.yahoo.com/quote/%5ESP500TR/history/), from 4 January 1988 (the first
+day Yahoo provides) to 7 October 2026, in the same format. It is used only to check that the
+drawdown results hold with dividends.
+
 The data are subject to Yahoo's terms of service, and the index belongs to S&P Dow Jones
 Indices. The file is kept here so that the results can be reproduced exactly. The download in
 `src/data.py` stops at 7 October 2026, so a fresh copy covers the same days.

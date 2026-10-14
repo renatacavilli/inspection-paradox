@@ -1,0 +1,7 @@
+days_already_below_the_record,drawdowns_still_open,share_recovering_within_30_days,median_days_left,mean_days_left
+0,651,0.8233,6.0,53.5
+7,280,0.6321,15.0,112.3
+30,115,0.4783,35.0,239.1
+90,38,0.2632,121.0,618.6
+365,15,0.0667,340.0,1202.5
+1095,5,0.0,1528.0,2443.8

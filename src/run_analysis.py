@@ -1,14 +1,15 @@
 """Every number reported in the post and in the README.
 
-Writes data/processed/sp500_drawdowns.csv (one row per drawdown) and five tables in results/:
-summary.csv, friend_shares.csv, networks.csv, drawdown_shares.csv and drawdown_robustness.csv.
+Writes data/processed/sp500_drawdowns.csv (one row per drawdown) and seven tables in results/:
+summary.csv, friend_shares.csv, networks.csv, drawdown_shares.csv, drawdown_robustness.csv,
+drawdown_waiting.csv and drawdown_dividends.csv.
 """
 import numpy as np
 import pandas as pd
 
 import drawdowns
 import paradox
-from data import NETWORKS, ROOT, load_links, load_sp500
+from data import NETWORKS, ROOT, load_links, load_sp500, load_sp500_total_return
 
 RESULTS = ROOT / "results"
 DRAWDOWNS = ROOT / "data" / "processed" / "sp500_drawdowns.csv"
@@ -20,6 +21,7 @@ BUCKET_LABELS = ["Under 10 friends", "10 to 49", "50 to 99", "100 or more"]
 DURATION_EDGES = [0, 30, 365, 5 * 365, np.inf]      # calendar days
 DURATION_LABELS = ["Under 1 month", "1 to 12 months", "1 to 5 years", "Over 5 years"]
 DEPRESSION_RECOVERY = "1954-09-22"                  # the S&P 500 regains its 1929 high
+ELAPSED = [0, 7, 30, 90, 365, 3 * 365]              # days a drawdown has already lasted
 
 
 def friend_shares(counts: np.ndarray) -> pd.DataFrame:
@@ -51,6 +53,11 @@ def duration_shares(table: pd.DataFrame) -> pd.DataFrame:
     return grouped
 
 
+def recovery_share(table: pd.DataFrame) -> float:
+    """Share of the days of these drawdowns that come after the trough."""
+    return float((table["recovery_date"] - table["trough_date"]).dt.days.sum() / table["days"].sum())
+
+
 def summarise_lengths(days) -> dict[str, float]:
     """Count of drawdowns and their length averaged per drawdown and per day."""
     return {
@@ -60,6 +67,30 @@ def summarise_lengths(days) -> dict[str, float]:
         "median_per_drawdown": paradox.plain_median(days),
         "median_per_day": paradox.weighted_median(days),
     }
+
+
+def waiting_table(days) -> pd.DataFrame:
+    """For drawdowns that have already lasted a number of days, how much of them is left."""
+    table = pd.DataFrame({elapsed: drawdowns.wait_after(days, elapsed) for elapsed in ELAPSED}).T
+    table.index.name = "days_already_below_the_record"
+    return table.astype({"drawdowns_still_open": int}).round({"share_recovering_within_30_days": 4,
+                                                             "median_days_left": 1, "mean_days_left": 1})
+
+
+def dividends_table(price: pd.Series, total_return: pd.Series) -> pd.DataFrame:
+    """The drawdown lengths of the price index and of the total return index, over the same days."""
+    price = price[price.index >= total_return.index[0]]
+    rows = {}
+    for name, closes in [("Price index", price), ("With dividends reinvested", total_return)]:
+        days = drawdowns.find_drawdowns(closes)["days"]
+        rows[name] = {**summarise_lengths(days),
+                      "share_of_trading_days_below_the_record": drawdowns.share_of_days_below_record(closes),
+                      "longest": days.max()}
+    table = pd.DataFrame(rows).T
+    table["ratio_of_means"] = table["mean_per_day"] / table["mean_per_drawdown"]
+    table = table.round({column: 4 if column.startswith("share") else 1 for column in table.columns})
+    table.index.name = f"{price.index[0].date()} to {price.index[-1].date()}"
+    return table.astype({"count": int, "longest": int})
 
 
 def main() -> None:
@@ -101,6 +132,14 @@ def main() -> None:
         ("S&P 500", "Mean length, per day, from the formula (days)", round(paradox.weighted_mean_from_formula(days), 1)),
         ("S&P 500", "Ratio of the two means", round(paradox.weighted_mean(days) / paradox.plain_mean(days), 1)),
         ("S&P 500", "Share of days in the four longest drawdowns", round(days.nlargest(4).sum() / days.sum(), 4)),
+        ("S&P 500", "Mean days left until the record, on a random day inside a drawdown",
+         round(drawdowns.days_left(days).mean(), 1)),
+        ("S&P 500", "Median days left until the record, on a random day inside a drawdown",
+         float(np.median(drawdowns.days_left(days)))),
+        ("S&P 500", "Share of days inside a drawdown with more than a year left",
+         round((drawdowns.days_left(days) > 365).mean(), 4)),
+        ("S&P 500", "Share of the time in falls of more than 20% spent climbing back from the trough",
+         round(recovery_share(table[table["depth_pct"] <= -20]), 4)),
     ]
     samples = {
         "All drawdowns": table,
@@ -134,8 +173,13 @@ def main() -> None:
     networks.to_csv(RESULTS / "networks.csv")
     duration_shares(table).round(4).to_csv(RESULTS / "drawdown_shares.csv")
     robustness.to_csv(RESULTS / "drawdown_robustness.csv")
+    waiting = waiting_table(days)
+    waiting.to_csv(RESULTS / "drawdown_waiting.csv")
+    dividends = dividends_table(closes, load_sp500_total_return())
+    dividends.to_csv(RESULTS / "drawdown_dividends.csv")
     print(summary.to_string(index=False), shares.to_string(), networks.T.to_string(),
-          duration_shares(table).round(4).to_string(), robustness.to_string(), sep="\n\n")
+          duration_shares(table).round(4).to_string(), robustness.to_string(), waiting.to_string(),
+          dividends.T.to_string(), sep="\n\n")
 
 
 if __name__ == "__main__":

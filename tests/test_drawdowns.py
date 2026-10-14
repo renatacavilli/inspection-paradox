@@ -30,3 +30,23 @@ def test_unfinished_drawdown_is_left_out():
 
 def test_share_of_days_below_record():
     assert dd.share_of_days_below_record(series([100, 90, 100, 95])) == 0.5
+
+
+def test_days_left_counts_every_day_once():
+    # a drawdown of 3 days and one of 1 day: 3, 2, 1 days left, then 1
+    assert dd.days_left([3, 1]).tolist() == [3, 2, 1, 1]
+
+
+def test_mean_days_left_is_half_the_size_weighted_length():
+    lengths = [5, 15]
+    weighted = sum(x * x for x in lengths) / sum(lengths)
+    assert dd.days_left(lengths).mean() == (weighted + 1) / 2
+
+
+def test_wait_after():
+    #  lengths 2, 10 and 40; after 5 days only 10 and 40 are still open, with 5 and 35 days left
+    wait = dd.wait_after([2, 10, 40], 5)
+    assert wait["drawdowns_still_open"] == 2
+    assert wait["share_recovering_within_30_days"] == 0.5
+    assert wait["median_days_left"] == 20
+    assert wait["mean_days_left"] == 20
